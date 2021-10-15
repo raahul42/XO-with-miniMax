@@ -7,20 +7,15 @@ public class XO {
 
 		System.out.println("\n-->> GAME STARTS <<--\n");
 		printBoard();
-		UserPositions.add(1);
-		UserPositions.add(2);
-		CPUPositions.add(3);
-		CPUPositions.add(4);
-		CPUPositions.add(5);
 		
 		while (true) {
 
-			System.out.println("available positions: " + availablePos());
+			System.out.println("available positions: " + availablePos()); // list of unused positions (1-9)
 			Scanner sc = new Scanner(System.in);
 			System.out.print("Enter your placement : ");
 			int pos = sc.nextInt();
 
-			pos = isPosValid(pos, sc);
+			pos = isPosValid(pos, sc); // checking if position is already taken
 
 			UserPlay(pos);
 			printBoard();
