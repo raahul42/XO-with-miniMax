@@ -183,6 +183,10 @@ public class XO {
 		return (UserPositions.size() + CPUPositions.size()) == 9;
 	}
 
+	
+	int min_score = Integer.MAX_VALUE;
+	int max_score = Integer.MIN_VALUE;
+
 	static int minMax(String player) {
 
 		if (checkWinner()) {
@@ -196,9 +200,6 @@ public class XO {
 				return 0;
 			}
 		}
-
-		int min_score = Integer.MAX_VALUE;
-		int max_score = Integer.MIN_VALUE;
 
 		ArrayList<Integer> avail = availablePos();
 
