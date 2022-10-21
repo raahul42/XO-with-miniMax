@@ -9,15 +9,17 @@ public class XO {
 		printBoard();
 		
 		while (true) {
-
+			// Thread.sleep(900);
 			System.out.println("available positions: " + availablePos()); // list of unused positions (1-9)
 			Scanner sc = new Scanner(System.in);
+			// Thread.sleep(900);
 			System.out.print("Enter your placement : ");
 			int pos = sc.nextInt();
 
 			pos = isPosValid(pos, sc); // checking if position is already taken
 
 			UserPlay(pos);
+			// Thread.sleep(900);
 			printBoard();
 			
 			if (checkWinner()) {
@@ -47,9 +49,9 @@ public class XO {
 	}
 
 	static char[][] board = { 
-			{ 'X', '|', 'X', '|', 'O' }, 
+			{ ' ', '|', ' ', '|', ' ' }, 
 			{ '-', '+', '-', '+', '-' }, 
-			{ 'O', '|', 'O', '|', ' ' },
+			{ ' ', '|', ' ', '|', ' ' },
 			{ '-', '+', '-', '+', '-' }, 
 			{ ' ', '|', ' ', '|', ' ' } };
 
@@ -71,15 +73,19 @@ public class XO {
 
 	public static void placePiece(int pos, String player) {
 		char piece = ' ';
-		if (player == "user") {
+		if (player == "Human") {
 			piece = 'X';
+			UserPositions.add(pos);
 		}
 		if (player == "CPU") {
 			piece = 'O';
-		} else if (player == "pl-undo") {
+			CPUPositions.add(pos);
+		} 
+		else if (player == "human-undo") {
 			UserPositions.remove(UserPositions.indexOf(pos));
 
-		} else if (player == "cpu-undo") {
+		} 
+		else if (player == "cpu-undo") {
 			CPUPositions.remove(CPUPositions.indexOf(pos));
 		}
 		switch (pos) {
@@ -134,28 +140,26 @@ public class XO {
 	}
 
 	public static int getCPUpos() {
-//		Random n = new Random(); 
-//		int m = n.nextInt(9) + 1;
-//		while (UserPositions.contains(m) || CPUPositions.contains(m)) {
-//			m = n.nextInt(9) + 1;
-//		}
-//		return m;
+		// Random n = new Random(); 
+		// int m = n.nextInt(9) + 1;
+		// while (UserPositions.contains(m) || CPUPositions.contains(m)) {
+		// 	m = n.nextInt(9) + 1;
+		// }
+		// return m;
 		minMax("CPU");
 		return best_position; // perfect play for CPU
 	}
 
 	static void CPUplay(int pos) throws Exception {
-		Thread.sleep(600);
+		Thread.sleep(900);
 		System.out.println("CPU's turn");
-		Thread.sleep(800);
+		Thread.sleep(1000);
 
-		CPUPositions.add(pos);
 		placePiece(pos, "CPU");
 	}
 
 	static void UserPlay(int pos) {
-		UserPositions.add(pos);
-		placePiece(pos, "user");
+		placePiece(pos, "Human");
 	}
 
 	static boolean checkWinner() {
@@ -163,70 +167,69 @@ public class XO {
 		HashSet<List<Integer>> winPos = new HashSet<>();
 		winPos.add(Arrays.asList(1, 2, 3));
 		winPos.add(Arrays.asList(4, 5, 6));
-		winPos.add(Arrays.asList(7, 8, 9));
+		winPos.add(Arrays.asList(7, 8, 9));   
 		winPos.add(Arrays.asList(1, 4, 7));
 		winPos.add(Arrays.asList(2, 5, 8));
 		winPos.add(Arrays.asList(3, 6, 9));
 		winPos.add(Arrays.asList(1, 5, 9));
 		winPos.add(Arrays.asList(3, 5, 7));
 		
-		for (List<Integer> lisw : winPos) {
-			if (UserPositions.containsAll(lisw)) {
-				winner = "You";
+		for (List<Integer> winningSet : winPos) {
+			if (UserPositions.containsAll(winningSet)) {
+				winner = "Human";
 				return true;
 			} 
-			if (CPUPositions.containsAll(lisw)) {
+			if (CPUPositions.containsAll(winningSet)) {
 				winner = "CPU";
 				return true;
 			}
 		}		
 		return (UserPositions.size() + CPUPositions.size()) == 9;
-	}
-
-	
-	int min_score = Integer.MAX_VALUE;
-	int max_score = Integer.MIN_VALUE;
+	} 
 
 	static int minMax(String player) {
 
+		ArrayList<Integer> avail = availablePos();
+
 		if (checkWinner()) {
-			if (winner == "You") {
-				return (-1 * (1 + availablePos().size()));
+			if (winner == "Human") {
+				return (-1 * (1 + avail.size()));
 				 
 			} else if (winner == "CPU") {
-				return (1 * (1 + availablePos().size()));
+				return (1 + avail.size());
 				
 			} else if (winner == null) {
 				return 0;
 			}
 		}
 
-		ArrayList<Integer> avail = availablePos();
+		int min_score = Integer.MAX_VALUE;
+		int max_score = Integer.MIN_VALUE;
 
 		for (int pos : avail) {
 
 			if (player == "CPU") {
 				placePiece(pos, "CPU");
-				int currentScore = minMax("user");
+				int currentScore = minMax("Human");
 				placePiece(pos, "cpu-undo");
+				winner = null;
 
 				if(currentScore > max_score) {
-					max_score = currentScore;
 					best_position = pos;
 				}
-				return max_score;
-			}
-
-			if (player == "user") {
-				placePiece(pos, "user");
+				max_score = Math.max(max_score, currentScore);
+			} 
+			
+			else {
+				placePiece(pos, "Human");
 				int currentScore = minMax("CPU");
-				placePiece(pos, "pl-undo");
-
+				placePiece(pos, "human-undo");
+				winner = null;
 				min_score = Math.min(min_score, currentScore);
-				return min_score;
 			}
 		}
-		return 0;
+
+		return player == "CPU" ? max_score : min_score ;
 
 	}
 }
