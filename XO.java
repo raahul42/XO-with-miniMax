@@ -7,11 +7,13 @@ public class XO {
 
 		System.out.println("\n-->> GAME STARTS <<--\n");
 		printBoard();
-		
+
+		// Fix: Scanner created once outside the loop, closed after the loop ends
+		Scanner sc = new Scanner(System.in);
+
 		while (true) {
 			// Thread.sleep(900);
 			System.out.println("available positions: " + availablePos()); // list of unused positions (1-9)
-			Scanner sc = new Scanner(System.in);
 			// Thread.sleep(900);
 			System.out.print("Enter your placement : ");
 			int pos = sc.nextInt();
@@ -21,9 +23,8 @@ public class XO {
 			UserPlay(pos);
 			// Thread.sleep(900);
 			printBoard();
-			
+
 			if (checkWinner()) {
-				sc.close();
 				if (winner != null) {
 					System.out.println(winner + " won!");
 				} else {
@@ -32,11 +33,14 @@ public class XO {
 				break;
 			}
 
+			Thread.sleep(900);
+			System.out.println("CPU's turn");
+			Thread.sleep(1000);
+
 			CPUplay(getCPUpos());
 			printBoard();
 
 			if (checkWinner()) {
-				sc.close();
 				if (winner != null) {
 					System.out.println(winner + " won!");
 				} else {
@@ -46,13 +50,15 @@ public class XO {
 			}
 
 		}
+
+		sc.close();
 	}
 
-	static char[][] board = { 
-			{ ' ', '|', ' ', '|', ' ' }, 
-			{ '-', '+', '-', '+', '-' }, 
+	static char[][] board = {
 			{ ' ', '|', ' ', '|', ' ' },
-			{ '-', '+', '-', '+', '-' }, 
+			{ '-', '+', '-', '+', '-' },
+			{ ' ', '|', ' ', '|', ' ' },
+			{ '-', '+', '-', '+', '-' },
 			{ ' ', '|', ' ', '|', ' ' } };
 
 	static ArrayList<Integer> UserPositions = new ArrayList<>();
@@ -60,7 +66,7 @@ public class XO {
 
 	static String winner = null;
 	static int best_position;
-	
+
 	public static void printBoard() {
 		for (char[] row : board) {
 			for (char c : row) {
@@ -73,19 +79,18 @@ public class XO {
 
 	public static void placePiece(int pos, String player) {
 		char piece = ' ';
-		if (player == "Human") {
+		// Fix: use .equals() for string comparison throughout
+		if (player.equals("Human")) {
 			piece = 'X';
-			UserPositions.add(pos);
 		}
-		if (player == "CPU") {
+		if (player.equals("CPU")) {
 			piece = 'O';
-			CPUPositions.add(pos);
-		} 
-		else if (player == "human-undo") {
+		}
+		else if (player.equals("human-undo")) {
 			UserPositions.remove(UserPositions.indexOf(pos));
 
-		} 
-		else if (player == "cpu-undo") {
+		}
+		else if (player.equals("cpu-undo")) {
 			CPUPositions.remove(CPUPositions.indexOf(pos));
 		}
 		switch (pos) {
@@ -139,8 +144,8 @@ public class XO {
 		return l;
 	}
 
-	public static int getCPUpos() {
-		// Random n = new Random(); 
+	public static int getCPUpos() throws Exception {
+		// Random n = new Random();
 		// int m = n.nextInt(9) + 1;
 		// while (UserPositions.contains(m) || CPUPositions.contains(m)) {
 		// 	m = n.nextInt(9) + 1;
@@ -151,56 +156,52 @@ public class XO {
 	}
 
 	static void CPUplay(int pos) throws Exception {
-		Thread.sleep(900);
-		System.out.println("CPU's turn");
-		Thread.sleep(1000);
 
+		CPUPositions.add(pos);
 		placePiece(pos, "CPU");
 	}
 
 	static void UserPlay(int pos) {
+		UserPositions.add(pos);
 		placePiece(pos, "Human");
 	}
 
-	static boolean checkWinner() {
-
-		HashSet<List<Integer>> winPos = new HashSet<>();
-		winPos.add(Arrays.asList(1, 2, 3));
-		winPos.add(Arrays.asList(4, 5, 6));
-		winPos.add(Arrays.asList(7, 8, 9));   
-		winPos.add(Arrays.asList(1, 4, 7));
-		winPos.add(Arrays.asList(2, 5, 8));
-		winPos.add(Arrays.asList(3, 6, 9));
-		winPos.add(Arrays.asList(1, 5, 9));
-		winPos.add(Arrays.asList(3, 5, 7));
-		
+	// Fix: pure helper that returns the game result without modifying the static
+	// `winner` field -- used by minMax so it stays isolated from game state
+	static String computeWinner() {
+		List<List<Integer>> winPos = Arrays.asList(
+			Arrays.asList(1, 2, 3), Arrays.asList(4, 5, 6), Arrays.asList(7, 8, 9),
+			Arrays.asList(1, 4, 7), Arrays.asList(2, 5, 8), Arrays.asList(3, 6, 9),
+			Arrays.asList(1, 5, 9), Arrays.asList(3, 5, 7)
+		);
 		for (List<Integer> winningSet : winPos) {
-			if (UserPositions.containsAll(winningSet)) {
-				winner = "Human";
-				return true;
-			} 
-			if (CPUPositions.containsAll(winningSet)) {
-				winner = "CPU";
-				return true;
-			}
-		}		
-		return (UserPositions.size() + CPUPositions.size()) == 9;
-	} 
+			if (UserPositions.containsAll(winningSet)) return "Human";
+			if (CPUPositions.containsAll(winningSet)) return "CPU";
+		}
+		if ((UserPositions.size() + CPUPositions.size()) == 9) return "tie";
+		return null;
+	}
 
-	static int minMax(String player) {
+	static boolean checkWinner() {
+		String result = computeWinner();
+		if (result == null) return false;
+		winner = result.equals("tie") ? null : result;
+		return true;
+	}
+
+	static int minMax(String player) throws Exception {
 
 		ArrayList<Integer> avail = availablePos();
 
-		if (checkWinner()) {
-			if (winner == "Human") {
+		// Fix: use computeWinner() so minMax never reads or writes the static winner field
+		String result = computeWinner();
+		if (result != null) {
+			if (result.equals("Human")) {
 				return (-1 * (1 + avail.size()));
-				 
-			} else if (winner == "CPU") {
+			} else if (result.equals("CPU")) {
 				return (1 + avail.size());
-				
-			} else if (winner == null) {
-				return 0;
 			}
+			return 0; // tie
 		}
 
 		int min_score = Integer.MAX_VALUE;
@@ -208,28 +209,27 @@ public class XO {
 
 		for (int pos : avail) {
 
-			if (player == "CPU") {
-				placePiece(pos, "CPU");
+			// Fix: use .equals() for string comparison
+			if (player.equals("CPU")) {
+				CPUplay(pos);
 				int currentScore = minMax("Human");
 				placePiece(pos, "cpu-undo");
-				winner = null;
 
-				if(currentScore > max_score) {
+				if (currentScore > max_score) {
 					best_position = pos;
+					max_score = currentScore;
 				}
-				max_score = Math.max(max_score, currentScore);
-			} 
-			
+			}
+
 			else {
-				placePiece(pos, "Human");
+				UserPlay(pos);
 				int currentScore = minMax("CPU");
 				placePiece(pos, "human-undo");
-				winner = null;
 				min_score = Math.min(min_score, currentScore);
 			}
 		}
 
-		return player == "CPU" ? max_score : min_score ;
+		return player.equals("CPU") ? max_score : min_score;
 
 	}
 }
