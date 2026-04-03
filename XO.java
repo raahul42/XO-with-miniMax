@@ -65,7 +65,6 @@ public class XO {
 	static ArrayList<Integer> CPUPositions = new ArrayList<>();
 
 	static String winner = null;
-	static int best_position;
 
 	public static void printBoard() {
 		for (char[] row : board) {
@@ -87,11 +86,11 @@ public class XO {
 			piece = 'O';
 		}
 		else if (player.equals("human-undo")) {
-			UserPositions.remove(UserPositions.indexOf(pos));
+			UserPositions.remove(Integer.valueOf(pos));
 
 		}
 		else if (player.equals("cpu-undo")) {
-			CPUPositions.remove(CPUPositions.indexOf(pos));
+			CPUPositions.remove(Integer.valueOf(pos));
 		}
 		switch (pos) {
 		case 1:
@@ -126,8 +125,8 @@ public class XO {
 	}
 
 	static int isPosValid(int pos, Scanner sc) {
-		while (UserPositions.contains(pos) || CPUPositions.contains(pos)) {
-			System.out.print("Position taken\nEnter a vacant position : ");
+		while (pos < 1 || pos > 9 || UserPositions.contains(pos) || CPUPositions.contains(pos)) {
+			System.out.print("Invalid position\nEnter a vacant position (1-9): ");
 			pos = sc.nextInt();
 		}
 		return pos;
@@ -145,14 +144,19 @@ public class XO {
 	}
 
 	public static int getCPUpos() throws Exception {
-		// Random n = new Random();
-		// int m = n.nextInt(9) + 1;
-		// while (UserPositions.contains(m) || CPUPositions.contains(m)) {
-		// 	m = n.nextInt(9) + 1;
-		// }
-		// return m;
-		minMax("CPU");
-		return best_position; // perfect play for CPU
+		int bestPos = -1;
+		int maxScore = Integer.MIN_VALUE;
+
+		for (int pos : availablePos()) {
+			CPUplay(pos);
+			int score = minMax("Human");
+			placePiece(pos, "cpu-undo");
+			if (score > maxScore) {
+				maxScore = score;
+				bestPos = pos;
+			}
+		}
+		return bestPos;
 	}
 
 	static void CPUplay(int pos) throws Exception {
@@ -216,7 +220,6 @@ public class XO {
 				placePiece(pos, "cpu-undo");
 
 				if (currentScore > max_score) {
-					best_position = pos;
 					max_score = currentScore;
 				}
 			}
